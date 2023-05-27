@@ -1,0 +1,3 @@
+D:/workspace/C/SNLCompiler/SNLCompiler/cmake-build-debug/CMakeFiles/SNLCompiler.dir
+D:/workspace/C/SNLCompiler/SNLCompiler/cmake-build-debug/CMakeFiles/edit_cache.dir
+D:/workspace/C/SNLCompiler/SNLCompiler/cmake-build-debug/CMakeFiles/rebuild_cache.dir

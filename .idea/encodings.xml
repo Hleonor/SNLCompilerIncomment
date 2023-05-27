@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="Encoding">
+    <file url="file://$PROJECT_DIR$/DesProcess.cpp" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/LL1Process.cpp" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/SemanticAnalysis.cpp" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/cmake-build-debug/error.txt" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/cmake-build-debug/symbtable.txt" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/hyf.h" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/main.cpp" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/zjh.h" charset="GBK" />
+    <file url="file://$PROJECT_DIR$/zyg.h" charset="GBK" />
+  </component>
+</project>

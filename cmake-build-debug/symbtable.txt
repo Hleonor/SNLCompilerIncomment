@@ -1,0 +1,20 @@
+t 0 0x28e3b7de980 0x28e3b7defb0 0
+z 0 0x28e3b9b3db0 0x28e3b7d89a0 0
+i 1 0x28e3b9b3160 0x28e3b7defb0 1 0 1
+j 1 0x28e3b9b31c0 0x28e3b7defb0 1 0 1
+num 1 0x28e3b9b3220 0x28e3b7defb0 1 0 1
+a 1 0x28e3b9b32a0 0x28e3b9b3260 1 2 19
+q 2 0x28e3b9b3340 0 1 0x28e3b9b3400
+
+
+
+
+
+******************************ÒÑÉ¾³ý·ûºÅ±í*************************************
+num 1 0x28e3b9b33c0 0x28e3b7defb0 2 0 1
+a 1 0x28e3b9bd010 0x28e3b9b3440 2 2 19
+i 1 0x28e3b9bd070 0x28e3b7defb0 2 0 1
+j 1 0x28e3b9bd0d0 0x28e3b7defb0 2 0 1
+k 1 0x28e3b9bd130 0x28e3b7defb0 2 0 1
+t 1 0x28e3b9bd1b0 0x28e3b7defb0 2 0 1
+ab 1 0x28e3b9bd290 0x28e3b9bd210 2 3 1000101968
