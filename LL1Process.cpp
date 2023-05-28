@@ -1,19 +1,19 @@
 #include"hyf.h"
 
 /*******************变量声明************************/
-stack<string> signStack;                    //符号栈
-stack<TreeNode *> opSignStack;              //操作符栈
-stack<TreeNode *> opNumStack;               //操作数栈
-stack<TreeNode **> syntaxTreeStack;         //语法树栈
-vector<vector<string>> productSet;          //存储所有的产生式
-vector<vector<string>> predictSet;          //存储所有产生式的predict集
-vector<vector<int>> LL1Table;               //LL1矩阵，作用是对于当前非终极符和当前输入符确定应该选择的语法规则，
-set<string> VT;                             //存储所有终极符
-set<string> VN;                             //存储所有非终极符
-string S;                                   //开始符
-TreeNode *currentP;                         //存储当前节点
-TreeNode *saveP;                            //保存当前指向记录类型声明节点的指针
-TreeNode *saveFuncP;                        //保存指向某一节点的指针
+stack<string> signStack;                    // 符号栈，用于进行SNL的LL(1)语法分析，一开始只压栈当前节点的儿子或者兄弟节点，并不是直接压入节点，因为节点的生成是在语法分析过程中完成的
+stack<TreeNode *> opSignStack;              // 操作符栈，生成声明部分和语句部分的语法树;
+stack<TreeNode *> opNumStack;               // 操作数栈，用于生成表达式部分的语法树
+stack<TreeNode **> syntaxTreeStack;         // 语法树栈，用于生成表达式部分的语法树
+vector<vector<string>> productSet;          // 存储所有的产生式，每个产生式是一个vector<string>，vector<string>中的每个元素是一个终极符或者非终极符
+vector<vector<string>> predictSet;          // 存储所有产生式的predict集，predict集中每个元素是一个终极符
+vector<vector<int>> LL1Table;               // LL1矩阵，作用是对于当前非终极符和当前输入符确定应该选择的语法规则，其值对应产生式的编号或者错误编号，产生式编号从1开始，错误编号为0，产生式是行号，predict集中每个元素是列号
+set<string> VT;                             // 存储所有终极符
+set<string> VN;                             // 存储所有非终极符
+string S;                                   // 开始符
+TreeNode *currentP;                         // 存储当前节点
+TreeNode *saveP;                            // 保存当前指向记录类型声明节点的指针
+TreeNode *saveFuncP;                        // 保存指向某一节点的指针
 DeckEnum *temp;
 bool getExpResult = true;
 bool getExpResult2;                         //用于数组
@@ -29,56 +29,55 @@ string arrayLexType_hyf[] = {"ID", "IF", "BEGIN", "INTC", "END", "PLUS", "MINUS"
 /*******************函数声明************************/
 TreeNode *Parse()
 {
-
-    CreatLL1Table();
-    S = productSet[0][0];    //开始符赋值
-    signStack.push(S);
-    TreeNode *proK;    //根节点
+    CreatLL1Table();                                // 创建LL1预测分析表
+    S = productSet[0][0];                           // 开始符赋值，即第一个产生式的左部，这里是Program
+    signStack.push(S);                           // 将开始符压入符号栈
+    TreeNode *proK;                                 // 根节点
     proK = new TreeNode();
     (*proK).nodekind = ProK;
     (*proK).lineno = 1;
-    syntaxTreeStack.push(&(*proK).child[2]);
-    syntaxTreeStack.push(&(*proK).child[1]);
-    syntaxTreeStack.push(&(*proK).child[0]);    //将根节点的儿子指针压入语法树栈
+    // 将根节点的三个孩子节点指针压入语法树栈，因为根节点没有兄弟节点，所以不用压入兄弟节点
+    syntaxTreeStack.push(&(*proK).child[2]);    // 将根节点的儿子指针压入语法树栈，这里是程序体部分
+    syntaxTreeStack.push(&(*proK).child[1]);    // 将根节点的儿子指针压入语法树栈，这里是声明部分
+    syntaxTreeStack.push(&(*proK).child[0]);    // 将根节点的儿子指针压入语法树栈，这里是程序头部分
 
     //读入一个Token，用lineno记录单词行号
     ifstream in("token.txt");
     string line;
     getline(in, line);
     istringstream inword(line);
-    inword >> token.linsShow;
-    int lex;
-    inword >> lex;
-    token.lex = (LexType) lex;
+    inword >> token.linsShow;                   // 读入行号
+    int lex;                                    // 用于存储词法信息
+    inword >> lex;                              // 读入词法信息
+    token.lex = (LexType) lex;                  // 将词法信息转换为枚举类型
     inword >> token.sem;
-    int lineno = token.linsShow;
-    while (!signStack.empty())
+    int lineno = token.linsShow;                // 记录当前行号
+    while (!signStack.empty())                  // 当栈不空的时候，说明还没有分析完毕
     {
-        string top = signStack.top();
-        int num = GetIndex(VN, top);    //若top是终极符会返回-1;
-        if (num != -1)
-        {    //不是终极符
-            int x = GetIndex(VN, top);
-            int y = GetIndex(VT, arrayLexType_hyf[(int) token.lex]);
-            int pnum = LL1Table[x][y];        //栈顶非终极符做为行号，Token的词法信息为列号，取LL(1)分析表内容，得到产生式编号
-            if (pnum == 0)
+        string top = signStack.top();           // 取出栈顶元素
+        int num = GetIndex(VN, top);      // 若top是终极符会返回-1;
+        if (num != -1)                          // 不是终极符
+        {
+            int x = GetIndex(VN, top);    // 栈顶非终极符做为行号
+            int y = GetIndex(VT, arrayLexType_hyf[(int) token.lex]); // Token的词法信息为列号
+            int pnum = LL1Table[x][y];          // 栈顶非终极符做为行号，Token的词法信息为列号，取LL(1)分析表内容，得到产生式编号
+            if (pnum == 0)                      // 产生式编号为0，说明不属于该非终极符的predict集
             {
                 string a = to_string(token.linsShow) + ":" + arrayLexType_hyf[(int) token.lex] + "不属于" + top +
                            "的predict集";
                 InputError(a, "error.txt");
-                //cout << token.linsShow << ":" << arrayLexType_hyf[(int)token.lex] << "不属于" << top << "的predict集";
                 exit(0);
             }
-            signStack.pop();
-            Predict(pnum);
+            signStack.pop();                    // 弹出栈顶元素
+            Predict(pnum);                      // 根据不同的产生式编号，选择不同的产生式，然后将产生式的右部逆序压入栈中
         }
-        else
-        {                    //是终极符
-            if (top == arrayLexType_hyf[(int) token.lex])
-            {    //栈顶与token匹配
-                signStack.pop();
+        else                                    // 是终极符
+        {
+            if (top == arrayLexType_hyf[(int) token.lex])           // 如果栈顶元素和Token匹配
+            {
+                signStack.pop();                                    // 弹出栈顶元素
                 //读入一个Token，并用lineon记录行号
-                getline(in, line);
+                getline(in, line);                            // 读入下一个Token
                 istringstream inword(line);
                 inword >> token.linsShow;
                 int lex;
@@ -96,13 +95,13 @@ TreeNode *Parse()
             }
         }
     }
-    if (in.eof())
+    if (in.eof())                                                   // 文件结束
     {
-        Input(proK, "treeLL1.txt");
+        Input(proK, "treeLL1.txt");                         // 将语法树输出到文件
     }
     else
     {
-        string a = "文件提前结束";
+        string a = "文件提前结束";                                    // 文件提前结束
         InputError(a, "error.txt");
         //cout << "文件提前结束";
         exit(0);
@@ -159,7 +158,7 @@ void InputError(string errorInfo, string path)
     ouput.close();
 }
 
-void Predict(int pnum)
+void Predict(int pnum) // 根据产生式编号，选择相应的语义动作
 {
     if (pnum == 1)
 	{ process1(); }
@@ -375,24 +374,24 @@ void Predict(int pnum)
 
 void CreatLL1Table()
 {
-    string line;    //记录每一行字符串
-    vector<string> words;    //存储每一行字符串里的所有单词
-    //将product.txt文件读入到productSet，该文件内存储所有的产生式,通过该文件可以获得所有的非终极符
-    ifstream in("product.txt");
+    string line;                    // 记录每一行字符串
+    vector<string> words;           // 存储每一行字符串里的所有单词
+    // 将product.txt文件读入到productSet，该文件内存储所有的产生式,通过该文件可以获得所有的非终极符，保存到VN中
+    ifstream in("Product.txt");  // 从Product.txt文件中读取产生式
     if (in)
     {
         while (getline(in, line))
         {
             //cout << line << endl;
             istringstream inword(line);
-            string word;    //记录单词
-            int i = 0;        //记录单词数，方便对第二个单词舍弃，并将第一个单词加入集合VN
+            string word;            // 记录单词
+            int i = 0;              // 记录单词数，方便对第二个单词":="舍弃，并将第一个单词加入集合VN
             while (inword >> word)
             {
                 i++;
                 if (i == 1)
                 {
-                    VN.insert(word);
+                    VN.insert(word); // 将产生式左部加入到VN中，即得到所有的非终极符
                     words.push_back(word);
                 }
                 else if (i > 2)
@@ -400,7 +399,7 @@ void CreatLL1Table()
                     words.push_back(word);
                 }
             }
-            productSet.push_back(words);
+            productSet.push_back(words); // 将每一行的产生式加入到productSet中
             words.clear();
         }
     }
@@ -409,7 +408,8 @@ void CreatLL1Table()
         cerr << "该文件不存在";
     }
     in.close();
-    //将predict.txt文件读入到predictSet，该文件内存储所有的产生式的predict集,通过该文件可以获得所有的终极符
+    //将predict.txt文件读入到predictSet，该文件内存储所有的产生式的predict集,通过该文件可以获得所有的终极符，保存到VT中
+    // predict集和product中的每一条产生式一一对应
     in.open("predict.txt");
     if (in)
     {
@@ -423,12 +423,12 @@ void CreatLL1Table()
             {
                 i++;
                 words.push_back(word);
-                if (i != 1)
+                if (i != 1) // 第一个单词是产生式的序号，不是终极符
                 {
                     VT.insert(word);
                 }
             }
-            predictSet.push_back(words);
+            predictSet.push_back(words); // 序号也要加入到predictSet中，一行对应一个产生式
             words.clear();
         }
     }
@@ -437,23 +437,24 @@ void CreatLL1Table()
         cerr << "该文件不存在";
     }
     in.close();
-    //利用上面获取到的所有非终极符和终极符构建LL1矩阵，然后通过predictSet来对矩阵进行赋值
+    // 利用上面获取到的所有非终极符和终极符构建LL1矩阵，然后通过predictSet来对矩阵进行赋值
     int m = VN.size(), n = VT.size();
+    // 初始化LL1Table，将所有的元素初始化为0，是一个m*n的矩阵，元素为产生式的序号，表示应该去找哪一条产生式
     LL1Table = vector<vector<int>>(m, vector<int>(n, 0));
-    for (int i = 0; i < predictSet.size(); i++)
+    for (int i = 0; i < predictSet.size(); i++) // 遍历每一个predict集的中的每一条
     {
-        int num = stoi(predictSet[i][0]);
-        string s = productSet[num - 1][0];
-        int x = GetIndex(VN, s);
-        for (int j = 1; j < predictSet[i].size(); j++)
+        int num = stoi(predictSet[i][0]);   // 得到这个predict集对应的产生式序号
+        string s = productSet[num - 1][0];      // 获取产生式左部的非终极符，因为非终极符就是通过序号来获取的
+        int x = GetIndex(VN, s);             // 获取该非终极符在VN中的下标
+        for (int j = 1; j < predictSet[i].size(); j++) // 遍历每一行
         {
-            int y = GetIndex(VT, predictSet[i][j]);
-            LL1Table[x][y] = num;
+            int y = GetIndex(VT, predictSet[i][j]); // 获取第i条predict集中的第j个终极符在VT中的下标
+            LL1Table[x][y] = num;                  // 将该产生式的序号填入LL1Table[x][y]
         }
     }
 }
 
-int Priosoty(LexType op)
+int Priosoty(LexType op) // 传入一个运算符，返回该运算符的优先级
 {
     if (op == END)
     {
@@ -480,7 +481,7 @@ int Priosoty(LexType op)
     }
 }
 
-int GetIndex(set<string> &A, string s)
+int GetIndex(set<string> &A, string s) // 获取字符串s在集合A中的下标
 {
     int i = 0;
     for (set<string>::iterator begin = A.begin(); begin != A.end(); begin++, i++)
@@ -493,78 +494,84 @@ int GetIndex(set<string> &A, string s)
     return -1;    //当字符串s不在集合内时返回-1
 }
 
-void process1()
+// Program ::= ProgramHead DeclarePart ProgramBody DOT
+void process1() // 处理产生式1，将ProgramHead DeclarePart ProgramBody DOT从右至左压入栈中
 {
     for (int i = productSet[0].size() - 1; i >= 1; i--)
     {
-        signStack.push(productSet[0][i]);
+        signStack.push(productSet[0][i]); // 栈顶元素是ProgramHead
     }
 }
 
-void process2()
+// ProgramHead ::= PROGRAM ProgramName
+void process2() // 处理产生式2，将ProgramHead压入栈中，并且将栈顶的指针指向该节点
 {
     for (int i = productSet[1].size() - 1; i >= 1; i--)
     {
-        signStack.push(productSet[1][i]);
+        signStack.push(productSet[1][i]);    // 经过下面的操作以后，栈顶元素是ProgramName
     }
-    currentP = new TreeNode();
-    (*currentP).nodekind = PheadK;
-    (*currentP).lineno = token.linsShow;
-    TreeNode **t = syntaxTreeStack.top();
-    syntaxTreeStack.pop();
-    *t = currentP;
+    currentP = new TreeNode();                  // 创建一个新的节点，表示ProgramHead
+    (*currentP).nodekind = PheadK;              // 程序头标志节点
+    (*currentP).lineno = token.linsShow;        // 行号
+    TreeNode **t = syntaxTreeStack.top();       // 获取栈顶的指针，树的节点要么是终结符，要么是非终结符，所以用指针来指向这些节点
+    syntaxTreeStack.pop();                      // 弹出栈顶的指针
+    *t = currentP;                              // 将栈顶的指针指向新创建的节点
+    // 程序头节点是语法树根节点的儿子节点
     //currentP = t;
 }
 
+// ProgramName ::= ID
 void process3()
 {
     for (int i = productSet[2].size() - 1; i >= 1; i--)
     {
-        signStack.push(productSet[2][i]);
+        signStack.push(productSet[2][i]); // 栈顶元素是ID
     }
-    (*currentP).idnum++;
-    (*currentP).name.push_back(token.sem);
+    (*currentP).idnum++; // 程序头中的标识符个数加1，因为产生式3中有一个标识
+    (*currentP).name.push_back(token.sem); // 将标识符的名字加入到程序头的名字中
 }
 
+// DeclarePart ::= TypeDec VarDec ProcDec
 void process4()
 {
     for (int i = productSet[3].size() - 1; i >= 1; i--)
     {
-        signStack.push(productSet[3][i]);
+        signStack.push(productSet[3][i]); // 栈顶元素是TypeDec
     }
 }
 
+// TypeDecpart ::=
 void process5()
 {}
 
+// TypeDecpart ::= TypeDec
 void process6()
 {
     for (int i = productSet[5].size() - 1; i >= 1; i--)
     {
-        signStack.push(productSet[5][i]);
+        signStack.push(productSet[5][i]); // 栈顶元素是TypeDec
     }
 }
 
-void process7()
+// TypeDec ::= TYPE TypeDecList
+void process7() // 处理类型声明
 {
     for (int i = productSet[6].size() - 1; i >= 1; i--)
     {
         signStack.push(productSet[6][i]);
     }
-    currentP = new TreeNode();
-    (*currentP).nodekind = TypeK;
-    (*currentP).lineno = token.linsShow;
-    TreeNode **t = syntaxTreeStack.top();
-    syntaxTreeStack.pop();
-    *t = currentP;
-    //currentP = t;
-    //(*currentP).sibling = new TreeNode();
-    //(*currentP).child[0] = new TreeNode();
-    syntaxTreeStack.push(&(*currentP).sibling);
-    syntaxTreeStack.push(&(*currentP).child[0]);
+    currentP = new TreeNode();                  // 生成类型声明标志节点
+    (*currentP).nodekind = TypeK;               // 类型声明标志节点
+    (*currentP).lineno = token.linsShow;        // 行号
+    TreeNode **t = syntaxTreeStack.top();       // 获取栈顶的指针，此时的栈顶指针指向的是TypeDec，他也作为根节点的儿子节点
+    syntaxTreeStack.pop();                      // 弹出栈顶的指针
+    *t = currentP;                              // 将栈顶的指针指向新创建的节点，即类型声明标志节点TypeDec
 
+    syntaxTreeStack.push(&(*currentP).sibling); // 当前类型声明节点的兄弟节点应该指向变量声明标识节点，函数声明节点或者语句序列节点(因为声明完类型可能没有变量声明，函数声明，所以可能是语句序列节点)
+    syntaxTreeStack.push(&(*currentP).child[0]); // 子节点应该指向具体的声明节点
 }
 
+// TypeDecList ::= TypeId EQ TypeDef SEMI TypeDecMore
 void process8()
 {
     for (int i = productSet[7].size() - 1; i >= 1; i--)
@@ -572,48 +579,59 @@ void process8()
         signStack.push(productSet[7][i]);
     }
     currentP = new TreeNode();
-    (*currentP).nodekind = DecK;
+    (*currentP).nodekind = DecK; // 声明节点
     (*currentP).lineno = token.linsShow;
     TreeNode **t = syntaxTreeStack.top();
-    syntaxTreeStack.pop();
+    // 若是第一个声明节点，则是 Type类型的子节点指向当前节点
+    // 否则，作为上一个类型声明的兄弟节点出现。并将此节点的兄弟节点压入语法树栈，以便处理下一个类型声明。
+    // 即表示成多个类型声明的链表
+    syntaxTreeStack.pop(); // 弹出栈顶的指针，正好是TypeK节点的child[0]节点，表示类型声明的具体类型
     *t = currentP;
-    //currentP = t;
-    //(*currentP).sibling = new TreeNode();
     syntaxTreeStack.push(&(*currentP).sibling);
 }
 
+// TypeDecMore ::=
 void process9()
 {
+    // 没有其它的类型声明，这时语法树栈顶存放的是最后一个类型声明节点的兄弟节点,弹出，完成类型部分的语法树节点生成。
     syntaxTreeStack.pop();
 }
 
+// TypeDecMore ::= TypeDecList
 void process10()
 {
     for (int i = productSet[9].size() - 1; i >= 1; i--)
     {
-        signStack.push(productSet[9][i]);
+        signStack.push(productSet[9][i]); // 栈顶元素是TypeDecList，右部符号入栈
     }
 }
 
+// TypeId ::= ID
 void process11()
 {
     for (int i = productSet[10].size() - 1; i >= 1; i--)
     {
-        signStack.push(productSet[10][i]);
+        signStack.push(productSet[10][i]); // 栈顶元素是ID，当前节点是类型声明节点的子节点
     }
-    (*currentP).idnum++;
-    (*currentP).name.push_back(token.sem);
+    (*currentP).idnum++; // 类型声明中的标识符个数加1
+    (*currentP).name.push_back(token.sem); // 因为可能会保存多个标识符，所以将标识符的名字保存在vector中
 }
 
+// TypeDef ::= BaseType
 void process12()
 {
     for (int i = productSet[11].size() - 1; i >= 1; i--)
     {
         signStack.push(productSet[11][i]);
     }
+    // 处理声明节点的标识符的类型部分。基本类型可以是整型和字符型，
+    // 这里用变量temp记录节点上填写标识符类型信息的部分的地址,
+    // 在下面的产生式处理对 temp里的内容进行赋值，就完成了类型部分的填写。
+    // 即temp指向的是类型声明节点的类型部分，要完成类型部分的填写，就要对temp进行赋值
     temp = &((*currentP).kind.dec);
 }
 
+// TypeDef ::= StructureType
 void process13()
 {
     for (int i = productSet[12].size() - 1; i >= 1; i--)
@@ -623,36 +641,42 @@ void process13()
     temp = &((*currentP).kind.dec);
 }
 
+// TypeDef ::= ID 类型定义
 void process14()
 {
     for (int i = productSet[13].size() - 1; i >= 1; i--)
     {
         signStack.push(productSet[13][i]);
     }
-    (*currentP).kind.dec = IdK;
+    (*currentP).kind.dec = IdK; // 类类型标志符作为类型
     (*currentP).type_name = token.sem;
     (*currentP).idnum++;
     (*currentP).name.push_back(token.sem);
 }
 
+// BaseType ::= INTEGER
 void process15()
 {
     for (int i = productSet[14].size() - 1; i >= 1; i--)
     {
         signStack.push(productSet[14][i]);
     }
-    (*temp) = IntegerK;
+    (*temp) = IntegerK; // 整数类型
 }
 
+// BaseType ::= CHAR
 void process16()
 {
     for (int i = productSet[15].size() - 1; i >= 1; i--)
     {
         signStack.push(productSet[15][i]);
     }
+    // temp一定都是指向类型声明节点的类型部分，所以这里对temp进行赋值，就完成了类型部分的填写
+    // 只要temp被赋值为&((*currentP).kind.dec); 就一定要紧接着对temp进行赋值，否则会出错，造成temp变量的值被覆盖
     (*temp) = CharK;
 }
 
+// StructureType ::= ArrayType
 void process17()
 {
     for (int i = productSet[16].size() - 1; i >= 1; i--)
@@ -675,7 +699,7 @@ void process19()
     {
         signStack.push(productSet[18][i]);
     }
-    (*temp) = ArrayK;
+    (*temp) = ArrayK; // 数组类型
     temp = &((*currentP).attr.arrayAttr.childType);
 }
 
@@ -703,20 +727,28 @@ void process22()
     {
         signStack.push(productSet[21][i]);
     }
+    // 声明的类型部分赋值为记录类型 RecordK,用变量saveP保存当前指向记录类型声明节点的指针，
+    // 以便处理完记录的各个域以后能够回到记录类型节点处理没有完成的信息，
+    // 并压入指向记录的第一个域的指针进语法树栈，在后面对指针赋值。
     (*temp) = RecordK;
     saveP = currentP;
-    //(*currentP).child[0] = new TreeNode();
     syntaxTreeStack.push(&(*currentP).child[0]);
 }
 
 void process23()
 {
+    // 生成记录类型的一个域，节点为声明类型的节点，不添加任何信息;
+    // 类型属于基类型，用 temp记录填写类型信息的成员地址，以待以后填写是整数类型还是字符类型
+    // 弹语法树栈，令指针指向这个节点。
+    // 若是第一个，则是 record类型的子节点指向当前节点;
+    // 否则，是上一个记录域声明的兄弟节点。
+    // 最后，压入指向记录类型下一个域的指针，以处理多个域。
     for (int i = productSet[22].size() - 1; i >= 1; i--)
     {
         signStack.push(productSet[22][i]);
     }
     currentP = new TreeNode();
-    (*currentP).nodekind = DecK;
+    (*currentP).nodekind = DecK; // 具体类型声明节点，而不是标志节点
     (*currentP).lineno = token.linsShow;
     TreeNode **t = syntaxTreeStack.top();
     syntaxTreeStack.pop();
@@ -744,6 +776,10 @@ void process24()
     syntaxTreeStack.push(&(*currentP).sibling);
 }
 
+// 没有记录类型的下一个域了,弹出栈顶保存的最后一个域的兄弟节点
+// 表示记录的域全部处理完;并利用saveP恢复当前记录类型节点的指针。
+// 兄弟指针可能是空指针，但是也同样压入栈中
+// 所有的连接操作都不是在process中完成的，而是在各种process以后完成的，延迟连接，从而构建语法树
 void process25()
 {
     syntaxTreeStack.pop();
@@ -790,6 +826,13 @@ void process31()
     }
 }
 
+/**
+ * 处理变量声明，产生式右部压入符号栈;
+ * 语法树部分，生成变量声明标志节点，弹语法树栈，得到指针的地址，令指针指向此声明节点，
+ * 使得此节点作为根节点的儿子节点或者类型标识节点的兄弟节点出现。
+ * 当前变量声明节点的兄弟节点应该指向函数声明节点或语句序列节点，而子节点则应指向具体的声明节点，
+ * 故将当前节点的兄弟节点和第一个儿子节点压入语法树栈，以待以后处理。
+ */
 void process32()
 {
     for (int i = productSet[31].size() - 1; i >= 1; i--)
@@ -802,9 +845,7 @@ void process32()
     TreeNode **t = syntaxTreeStack.top();
     syntaxTreeStack.pop();
     *t = currentP;
-    //currentP = t;
-    //(*currentP).sibling = new TreeNode();
-    //(*currentP).child[0] = new TreeNode();
+
     syntaxTreeStack.push(&(*currentP).sibling);
     syntaxTreeStack.push(&(*currentP).child[0]);
 }
@@ -884,15 +925,10 @@ void process41()
     saveFuncP = currentP;
     syntaxTreeStack.pop();
     *t = currentP;
-    //currentP = t;
-    //(*currentP).sibling = new TreeNode();
-    //(*currentP).child[2] = new TreeNode();
-    //(*currentP).child[1] = new TreeNode();
-    //(*currentP).child[0] = new TreeNode();
     syntaxTreeStack.push(&(*currentP).sibling);
-    syntaxTreeStack.push(&(*currentP).child[2]);
-    syntaxTreeStack.push(&(*currentP).child[1]);
-    syntaxTreeStack.push(&(*currentP).child[0]);
+    syntaxTreeStack.push(&(*currentP).child[2]); // 函数体
+    syntaxTreeStack.push(&(*currentP).child[1]); // 声明部分
+    syntaxTreeStack.push(&(*currentP).child[0]); // 形参，形参最后入栈，所以是栈顶元素
 }
 
 void process42()
