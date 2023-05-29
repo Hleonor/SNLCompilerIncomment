@@ -1,4 +1,5 @@
-#include"hyf.h"
+#include"header.h"
+#include <map>
 
 /*******************变量声明************************/
 stack<string> signStack;                    // 符号栈，用于进行SNL的LL(1)语法分析，一开始只压栈当前节点的儿子或者兄弟节点，并不是直接压入节点，因为节点的生成是在语法分析过程中完成的
@@ -23,6 +24,19 @@ string arrayLexType_hyf[] = {"ID", "IF", "BEGIN", "INTC", "END", "PLUS", "MINUS"
                              "LMIDPAREN", "RMIDPAREN", "DOT", "TYPE", "VAR", "PROCEDURE", "PROGRAM", "SEMI", "INTEGER",
                              "CHAR", "ARRAY", "RECORD", "UNDERANGE", "OF", "COMMA", "LPAREN", "RPAREN", "ENDWH",
                              "WHILE", "RETURN", "READ", "WRITE", "ASSIGN", "THEN", "FI", "ELSE", "DO"
+};
+
+// 创建映射表，将枚举类型和对应的类型名关联起来，打印到控制台的时候会用到，在LL1Process.cpp的151行
+std::map<NodeKindEnum, std::string> nodeKindMapForOutput = {
+        {ProK,     "ProK"},
+        {PheadK,   "PheadK"},
+        {TypeK,    "TypeK"},
+        {VarK,     "VarK"},
+        {ProcDecK, "ProcDecK"},
+        {StmLK,    "StmLK"},
+        {DecK,     "DecK"},
+        {StmtK,    "StmtK"},
+        {ExpK,     "ExpK"}
 };
 
 
@@ -110,6 +124,113 @@ TreeNode *Parse()
     return proK;
 }
 
+void PrintTreeNode(TreeNode *node, int depth) // 打印语法树节点
+{
+    for (int i = 0; i < depth; i++)
+    {
+        string str = "│   ";
+        std::cout << str; // 每级深度增加四个空格的缩进，并添加竖线分隔符
+    }
+
+    if (node->idnum > 0)
+    {
+        std::cout << "├── " << nodeKindMapForOutput[node->nodekind] << "  " ;
+        if (nodeKindMapForOutput[node->nodekind] == "DecK")
+        {
+            switch (node->kind.dec)
+            {
+                case 0:
+                    cout << "ArrayK  ";
+                    break;
+                case 1:
+                    cout << "CharK  ";
+                    break;
+                case 2:
+                    cout << "IntegerK  ";
+                    break;
+                case 3:
+                    cout << "RecordK  ";
+                    break;
+                case 4:
+                    cout << "IdK  ";
+                    break;
+            }
+        }
+        else if (nodeKindMapForOutput[node->nodekind] == "StmLK")
+        {
+            switch (node->kind.dec)
+            {
+                case 0:
+                    cout << "IfK  ";
+                    break;
+                case 1:
+                    cout << "WhileK  ";
+                    break;
+                case 2:
+                    cout << "AssignK";
+                    break;
+                case 3:
+                    cout << "ReadK";
+                    break;
+                case 4:
+                    cout << "WriteK";
+                    break;
+                case 5:
+                    cout << "CallK";
+                    break;
+                case 6:
+                    cout << "ReturnK";
+                    break;
+            }
+
+            cout << "  ";
+        }
+        else if (nodeKindMapForOutput[node->nodekind] == "ExpK")
+        {
+            switch (node->kind.exp)
+            {
+                case 0:
+                    cout << "OpK";
+                    break;
+                case 1:
+                    cout << "ConstK";
+                    break;
+                case 2:
+                    cout << "IdEK";
+                    break;
+            }
+            cout << "  ";
+        }
+        cout <<"ID(";
+        for (int i = 0; i < node->idnum; i++)
+        {
+            std::cout << node->name[i];
+            if (i < node->idnum - 1)
+            {
+                std::cout << ", ";
+            }
+        }
+        std::cout << ")" << std::endl;
+    }
+    else
+    {
+        std::cout << "├── " << nodeKindMapForOutput[node->nodekind] << endl;
+    }
+
+    for (int i = 0; i <= 2; i++)
+    {
+        if (node->child[i] != nullptr)
+        {
+            PrintTreeNode(node->child[i], depth + 1); // 递归打印子节点
+        }
+    }
+
+    if (node->sibling != nullptr)
+    {
+        PrintTreeNode(node->sibling, depth); // 继续打印兄弟节点
+    }
+}
+
 void Input(TreeNode *root, string path)
 {
     ofstream ouput;
@@ -135,6 +256,10 @@ void Input(TreeNode *root, string path)
         ouput << t->attr.expAttr.op << " " << t->attr.expAttr.type << " " << t->attr.expAttr.val << " "
               << t->attr.expAttr.varkind << " ";
         ouput << t->attr.procAttr.paramt << endl;
+
+        // 打印节点内容到控制台
+        PrintTreeNode(t, 0);
+
         if (t->sibling != NULL)
         {
             inputSort.push(t->sibling);
@@ -161,215 +286,215 @@ void InputError(string errorInfo, string path)
 void Predict(int pnum) // 根据产生式编号，选择相应的语义动作
 {
     if (pnum == 1)
-	{ process1(); }
+    { process1(); }
     else if (pnum == 2)
-	{ process2(); }
+    { process2(); }
     else if (pnum == 3)
-	{ process3(); }
+    { process3(); }
     else if (pnum == 4)
-	{ process4(); }
+    { process4(); }
     else if (pnum == 5)
-	{ process5(); }
+    { process5(); }
     else if (pnum == 6)
-	{ process6(); }
+    { process6(); }
     else if (pnum == 7)
-	{ process7(); }
+    { process7(); }
     else if (pnum == 8)
-	{ process8(); }
+    { process8(); }
     else if (pnum == 9)
-	{ process9(); }
+    { process9(); }
     else if (pnum == 10)
-	{ process10(); }
+    { process10(); }
     else if (pnum == 11)
-	{ process11(); }
+    { process11(); }
     else if (pnum == 12)
-	{ process12(); }
+    { process12(); }
     else if (pnum == 13)
-	{ process13(); }
+    { process13(); }
     else if (pnum == 14)
-	{ process14(); }
+    { process14(); }
     else if (pnum == 15)
-	{ process15(); }
+    { process15(); }
     else if (pnum == 16)
-	{ process16(); }
+    { process16(); }
     else if (pnum == 17)
-	{ process17(); }
+    { process17(); }
     else if (pnum == 18)
-	{ process18(); }
+    { process18(); }
     else if (pnum == 19)
-	{ process19(); }
+    { process19(); }
     else if (pnum == 20)
-	{ process20(); }
+    { process20(); }
     else if (pnum == 21)
-	{ process21(); }
+    { process21(); }
     else if (pnum == 22)
-	{ process22(); }
+    { process22(); }
     else if (pnum == 23)
-	{ process23(); }
+    { process23(); }
     else if (pnum == 24)
-	{ process24(); }
+    { process24(); }
     else if (pnum == 25)
-	{ process25(); }
+    { process25(); }
     else if (pnum == 26)
-	{ process26(); }
+    { process26(); }
     else if (pnum == 27)
-	{ process27(); }
+    { process27(); }
     else if (pnum == 28)
-	{ process28(); }
+    { process28(); }
     else if (pnum == 29)
-	{ process29(); }
+    { process29(); }
     else if (pnum == 30)
-	{ process30(); }
+    { process30(); }
     else if (pnum == 31)
-	{ process31(); }
+    { process31(); }
     else if (pnum == 32)
-	{ process32(); }
+    { process32(); }
     else if (pnum == 33)
-	{ process33(); }
+    { process33(); }
     else if (pnum == 34)
-	{ process34(); }
+    { process34(); }
     else if (pnum == 35)
-	{ process35(); }
+    { process35(); }
     else if (pnum == 36)
-	{ process36(); }
+    { process36(); }
     else if (pnum == 37)
-	{ process37(); }
+    { process37(); }
     else if (pnum == 38)
-	{ process38(); }
+    { process38(); }
     else if (pnum == 39)
-	{ process39(); }
+    { process39(); }
     else if (pnum == 40)
-	{ process40(); }
+    { process40(); }
     else if (pnum == 41)
-	{ process41(); }
+    { process41(); }
     else if (pnum == 42)
-	{ process42(); }
+    { process42(); }
     else if (pnum == 43)
-	{ process43(); }
+    { process43(); }
     else if (pnum == 44)
-	{ process44(); }
+    { process44(); }
     else if (pnum == 45)
-	{ process45(); }
+    { process45(); }
     else if (pnum == 46)
-	{ process46(); }
+    { process46(); }
     else if (pnum == 47)
-	{ process47(); }
+    { process47(); }
     else if (pnum == 48)
-	{ process48(); }
+    { process48(); }
     else if (pnum == 49)
-	{ process49(); }
+    { process49(); }
     else if (pnum == 50)
-	{ process50(); }
+    { process50(); }
     else if (pnum == 51)
-	{ process51(); }
+    { process51(); }
     else if (pnum == 52)
-	{ process52(); }
+    { process52(); }
     else if (pnum == 53)
-	{ process53(); }
+    { process53(); }
     else if (pnum == 54)
-	{ process54(); }
+    { process54(); }
     else if (pnum == 55)
-	{ process55(); }
+    { process55(); }
     else if (pnum == 56)
-	{ process56(); }
+    { process56(); }
     else if (pnum == 57)
-	{ process57(); }
+    { process57(); }
     else if (pnum == 58)
-	{ process58(); }
+    { process58(); }
     else if (pnum == 59)
-	{ process59(); }
+    { process59(); }
     else if (pnum == 60)
-	{ process60(); }
+    { process60(); }
     else if (pnum == 61)
-	{ process61(); }
+    { process61(); }
     else if (pnum == 62)
-	{ process62(); }
+    { process62(); }
     else if (pnum == 63)
-	{ process63(); }
+    { process63(); }
     else if (pnum == 64)
-	{ process64(); }
+    { process64(); }
     else if (pnum == 65)
-	{ process65(); }
+    { process65(); }
     else if (pnum == 66)
-	{ process66(); }
+    { process66(); }
     else if (pnum == 67)
-	{ process67(); }
+    { process67(); }
     else if (pnum == 68)
-	{ process68(); }
+    { process68(); }
     else if (pnum == 69)
-	{ process69(); }
+    { process69(); }
     else if (pnum == 70)
-	{ process70(); }
+    { process70(); }
     else if (pnum == 71)
-	{ process71(); }
+    { process71(); }
     else if (pnum == 72)
-	{ process72(); }
+    { process72(); }
     else if (pnum == 73)
-	{ process73(); }
+    { process73(); }
     else if (pnum == 74)
-	{ process74(); }
+    { process74(); }
     else if (pnum == 75)
-	{ process75(); }
+    { process75(); }
     else if (pnum == 76)
-	{ process76(); }
+    { process76(); }
     else if (pnum == 77)
-	{ process77(); }
+    { process77(); }
     else if (pnum == 78)
-	{ process78(); }
+    { process78(); }
     else if (pnum == 79)
-	{ process79(); }
+    { process79(); }
     else if (pnum == 80)
-	{ process80(); }
+    { process80(); }
     else if (pnum == 81)
-	{ process81(); }
+    { process81(); }
     else if (pnum == 82)
-	{ process82(); }
+    { process82(); }
     else if (pnum == 83)
-	{ process83(); }
+    { process83(); }
     else if (pnum == 84)
-	{ process84(); }
+    { process84(); }
     else if (pnum == 85)
-	{ process85(); }
+    { process85(); }
     else if (pnum == 86)
-	{ process86(); }
+    { process86(); }
     else if (pnum == 87)
-	{ process87(); }
+    { process87(); }
     else if (pnum == 88)
-	{ process88(); }
+    { process88(); }
     else if (pnum == 89)
-	{ process89(); }
+    { process89(); }
     else if (pnum == 90)
-	{ process90(); }
+    { process90(); }
     else if (pnum == 91)
-	{ process91(); }
+    { process91(); }
     else if (pnum == 92)
-	{ process92(); }
+    { process92(); }
     else if (pnum == 93)
-	{ process93(); }
+    { process93(); }
     else if (pnum == 94)
-	{ process94(); }
+    { process94(); }
     else if (pnum == 95)
-	{ process95(); }
+    { process95(); }
     else if (pnum == 96)
-	{ process96(); }
+    { process96(); }
     else if (pnum == 97)
-	{ process97(); }
+    { process97(); }
     else if (pnum == 98)
-	{ process98(); }
+    { process98(); }
     else if (pnum == 99)
-	{ process99(); }
+    { process99(); }
     else if (pnum == 100)
-	{ process100(); }
+    { process100(); }
     else if (pnum == 101)
-	{ process101(); }
+    { process101(); }
     else if (pnum == 102)
-	{ process102(); }
+    { process102(); }
     else if (pnum == 103)
-	{ process103(); }
+    { process103(); }
     else if (pnum == 104)
-	{ process104(); }
+    { process104(); }
     else
-	{}
+    {}
 }
 
 void CreatLL1Table()
@@ -567,7 +692,8 @@ void process7() // 处理类型声明
     syntaxTreeStack.pop();                      // 弹出栈顶的指针
     *t = currentP;                              // 将栈顶的指针指向新创建的节点，即类型声明标志节点TypeDec
 
-    syntaxTreeStack.push(&(*currentP).sibling); // 当前类型声明节点的兄弟节点应该指向变量声明标识节点，函数声明节点或者语句序列节点(因为声明完类型可能没有变量声明，函数声明，所以可能是语句序列节点)
+    syntaxTreeStack.push(
+            &(*currentP).sibling); // 当前类型声明节点的兄弟节点应该指向变量声明标识节点，函数声明节点或者语句序列节点(因为声明完类型可能没有变量声明，函数声明，所以可能是语句序列节点)
     syntaxTreeStack.push(&(*currentP).child[0]); // 子节点应该指向具体的声明节点
 }
 

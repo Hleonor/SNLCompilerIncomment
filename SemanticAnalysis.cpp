@@ -243,7 +243,7 @@ typeIR *arrayType(TreeNode *t)
 {
     if (t->attr.arrayAttr.low > t->attr.arrayAttr.up)
     {
-        cout << "数组下表越界" << endl;
+        cout << "数组下标越界" << endl;
     }
     else
     {

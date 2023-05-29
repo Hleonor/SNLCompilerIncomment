@@ -24,6 +24,7 @@ enum NodeKindEnum
     StmtK,                  // 语句节点
     ExpK                    // 表达式节点
 };
+
 enum DeckEnum
 {    //声明节点类型枚举
     ArrayK,                 // 数组类型
@@ -148,6 +149,7 @@ struct TreeNode
     string type_name;               // 记录类型名，当节点为声明类型且类型是由类型标志符表示是有效
     Attr attr;                      // 记录语法树节点其他属性
 };
+
 struct Token
 {
     int linsShow;                   // 记录单词行号

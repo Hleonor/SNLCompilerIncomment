@@ -1,4 +1,4 @@
-#include"hyf.h"
+#include"header.h"
 
 /*******************±äÁ¿ÉùÃ÷************************/
 string arrayLexTypeD_hyf[] = {"ID", "IF", "BEGIN", "INTC", "END", "PLUS", "MINUS", "TIMES", "OVER", "EQ", "LT",

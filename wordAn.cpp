@@ -1,7 +1,8 @@
 ﻿// ConsoleApplication1.cpp : 此文件包含 "main" 函数。程序执行将在此处开始并结束。
 #include"zyg.h"
 
-string arrayLexType_zyg[] = {"id", "if", "begin", "intc", "end", "+", "-", "*", "/", "=", "<", "[", "]", ".", "type",
+string arrayLexType_zyg[] =
+        {"id", "if", "begin", "intc", "end", "+", "-", "*", "/", "=", "<", "[", "]", ".", "type",
                              "var", "procedure", "program", ";", "integer", "char", "array", "record", "..", "of", ",",
                              "(", ")", "endwh", "while", "return", "read", "write", ":=", "then", "fi", "else", "do"
 
@@ -13,7 +14,6 @@ string arrayLexType_zyg[] = {"id", "if", "begin", "intc", "end", "+", "-", "*", 
 //, else, do
 // 结果保存到token.txt中，其中三个字段分别为行号，词法类型，语义信息
 
-
 void GetNextChar()
 {
     //string imbuffer;
@@ -23,20 +23,25 @@ void GetNextChar()
     int longquery; // 一行的长度
     int i = 0; // 一行的下标
     Token tok; // 词法单元，一个tok对应一个词法单元
-    ifstream fin("snls.txt");
+    //ifstream fin("s5.txt");
+    ifstream fin("semanticError/e7.txt");
     ofstream fout("token.txt");
+
     if (!fin && !fout)
     {
         string a = "文件不能打开";
         InputError(a, "error.txt");
         exit(0);
-        //cout << "文件不能打开" << endl;
     }
     else
     {
         while ((getline(fin, query))) // 对于每一行进行处理
         {
             linenum++;
+            /*if (linenum == 8)
+            {
+                cout << "debug" << endl;
+            }*/
             i = 0; // 追踪当前处理的字符在行中的位置。
             string imbuffer; // 暂存正在处理的单词或字符。
             //cout << query<<endl;
@@ -48,6 +53,11 @@ void GetNextChar()
             }
             while (i < longquery) // 如果当前行还没有结束，则继续处理。
             {
+                char ch = query[i]; // 获取当前字符
+               /* if (i == 14)
+                {
+                    cout << "debug" << endl;
+                }*/
                 if (sta == FINISH) // 读取到句点，说明词法分析结束，将token序列写入文件并退出循环。
                 {
                     tok.linsShow = linenum; // 将当前行号赋值给词法单元结构体 tok 中的 linsShow 字段

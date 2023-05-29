@@ -20,7 +20,7 @@ begin
                 t:=a[k];
                 a[k]:=a[k+1];
                 a[k+1]:=t
-            else ttemp:=0 {假设变量为temp时会输出报错"23标识符temp未声明"}
+            else t:=0 {假设变量为temp时会输出报错"23标识符temp未声明"}
             fi;
             k:=k+1
         endwh;
